@@ -15,6 +15,7 @@ make
 <h2>Remarks</h2>
 
 <h3>Architecture dependence</h3>
+
 There is a coupling with the IA64 architecture, primarily due to `src/thunks.c`'s:
 
 ```c
@@ -38,7 +39,7 @@ __int_thunk () { asm volatile (
 ); __builtin_unreachable(); }
 ```
 
-As far as cross-architecture compatibility goes, it's not in my eyesights; but as for system ABI conformance, I'm open to changes that extend support to broader POSIX compliance.
+As far as cross-architecture compatibility goes, it's not in my sights; but as for system ABI conformance, I'm open to changes that extend support to broader POSIX compliance.
 Segmentation faults have occurred merely across different optimisation levels, and AddressSanitizer complains (last I checked) about the thunk finalisation function, so I'm firm on the fact that the `__int_thunk` function is very fragile.
 
 <h3>The thunk system</h3>
