@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+      "cstdio": "cpp",
+      "routes.h": "c",
+      "functional": "c",
+      "common.h": "c",
+      "httpserver.h": "c"
+    }
+}
