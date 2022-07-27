@@ -12,6 +12,13 @@
 #include <string.h>
 
 #define DEFAULT_TCP_BACKLOG (8)
+#if DEFAULT_TCP_BACKLOG <= 0
+# pragma GCC error "DEFAULT_TCP_BACKLOG must be positive"
+#endif
+#define NULL_RECV_BUFFER_THRESHOLD (512)
+#if NULL_RECV_BUFFER_THRESHOLD <= 0
+# pragma GCC error "NULL_RECV_BUFFER_THRESHOLD must be positive"
+#endif
 
 typedef typeof (socket (SOCK_STREAM, AF_INET, 0)) tcp_sockfd_t;
 typedef typeof (recv (0, NULL, 0, 0)) recv_ret_t;
@@ -20,6 +27,7 @@ typedef typeof (send (0, NULL, 0, 0)) send_ret_t;
 /* thunk typedef stubs */
 typedef void (*__int_set_recv_low_watermark_fn)(size_t watermark);
 typedef recv_ret_t (*__int_recv_fn)(void* buf, size_t len);
+typedef recv_ret_t (*__int_peek_fn)(void* buf, size_t len);
 typedef send_ret_t (*__int_send_fn)(void* buf, size_t len);
 typedef void (*__int_close_fn)(void);
 typedef void (*__int_ts_start_event_loop_fn)(void);
@@ -47,6 +55,7 @@ typedef struct __int_tcp_socket
   {
     __int_recv_fn recv;
     __int_send_fn send;
+    __int_peek_fn peek;
     __int_close_fn close;
     __int_getaddr_fn get_address;
   } op;

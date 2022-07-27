@@ -6,6 +6,11 @@
 #include "tcpserver.h"
 #include "thunks.h"
 
+#define ALG_INCR_INITIAL_RECV (4)
+#if ALG_INCR_INITIAL_RECV <= 0
+# pragma GCC error ALG_INCR_INITIAL_RECV must be positive
+#endif
+
 typedef void (*__int_set_route_table_fn)(route_table_t route_table);
 typedef void (*__int_hs_start_event_loop_fn)(void);
 

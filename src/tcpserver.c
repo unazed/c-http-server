@@ -1,5 +1,6 @@
 #include "../include/tcpserver.h"
 #include "../include/thunks.h"
+#include <alloca.h>
 #include <sys/epoll.h>
 #include <fcntl.h>
 
@@ -84,17 +85,53 @@ __int_set_recv_low_watermark (tcp_client_t self, size_t watermark)
   debug ("set SO_RCVLOWAT to %zu", watermark);
 }
 
+static inline recv_ret_t
+__int_ts_generic_recv (tcp_client_t self, void* buf, size_t len, int flags)
+{
+  recv_ret_t ret;
+  bool allocated_tmp_buf = false;
+
+  debug ("trying to receive %zu bytes from socket (fd=%d, flags=%d)",
+         len, self->connection.sockfd, flags);
+  if (buf == NULL)
+    {
+      if (len > NULL_RECV_BUFFER_THRESHOLD)
+        {
+          warn ("allocating temporary heap (size=%zu) buffer",
+                len);
+          buf = calloc (sizeof (*buf), len);
+          allocated_tmp_buf = true;
+          if (buf == NULL)
+            panic ("failed to allocate temporary buffer");
+        }   
+      else
+        {
+          warn ("allocating temporary stack buffer (size=%zu)", len);
+          buf = alloca (len);
+        }
+    }
+  if ((ret = recv (
+      self->connection.sockfd, buf, len, flags
+      )) == -1)
+    panic ("failed to recv() from TCP socket");
+  if (allocated_tmp_buf)
+    {
+      warn ("temporary heap buffer deallocated, read %d bytes", ret);
+      free (buf);
+    }
+  return ret;
+}
+
 __THUNK_DECL recv_ret_t
 __int_ts_recv (tcp_client_t self, void* buf, size_t len)
 {
-  recv_ret_t ret;
-  debug ("trying to receive %zu bytes from socket (fd=%d)",
-         len, self->connection.sockfd);
-  if ((ret = recv (
-      self->connection.sockfd, buf, len, 0
-      )) == -1)
-    panic ("failed to recv() from TCP socket");
-  return ret;
+  return __int_ts_generic_recv (self, buf, len, 0);
+}
+
+__THUNK_DECL recv_ret_t
+__int_ts_peek (tcp_client_t self, void* buf, size_t len)
+{
+  return __int_ts_generic_recv (self, buf, len, MSG_PEEK);
 }
 
 __THUNK_DECL send_ret_t
@@ -158,6 +195,7 @@ __int_tcp_socket_free (tcp_client_t self)
   g_thunks.deallocate_thunk (self->connection.cfg.set_recv_low_watermark);
   g_thunks.deallocate_thunk (self->connection.op.get_address);
   g_thunks.deallocate_thunk (self->connection.op.recv);
+  g_thunks.deallocate_thunk (self->connection.op.peek);
   g_thunks.deallocate_thunk (self->connection.op.send);
   g_thunks.deallocate_thunk (self->connection.op.close);
   g_thunks.deallocate_thunk (self->connection.__int.free);
@@ -194,10 +232,11 @@ __int_ts_accept (tcpserver_t server)
   client->connection.op.get_address = __int_allocate_thunk (
     __int_ts_getaddr, client
   );
-  client->connection.op.recv = __int_allocate_thunk (
-    __int_ts_recv, client
-  );
+
+  client->connection.op.recv = __int_allocate_thunk (__int_ts_recv, client);
   client->connection.op.send = __int_allocate_thunk (__int_ts_send, client);
+  client->connection.op.peek = __int_allocate_thunk (__int_ts_peek, client);
+
   client->connection.cfg.set_recv_low_watermark = __int_allocate_thunk (
     __int_set_recv_low_watermark, server
   );

@@ -1,6 +1,6 @@
-CCFLAGS := -std=gnu11 -g -O3 -Wall -Wno-maybe-uninitialized \
+CCFLAGS :=  -g -Wall -Wno-maybe-uninitialized \
 			-Wno-unused-function -Wno-unused-variable -Wno-format-extra-args
-CCXFLAGS := -std=gnu11 -Os -Wall -Wno-maybe-uninitialized \
+CCXFLAGS :=  -Os -Wall -Wno-maybe-uninitialized \
 			-Wno-unused-function -Wno-unused-variable -Wno-format-extra-args
 INCDIR = include
 SRCDIR = src
@@ -18,5 +18,6 @@ release:
 all:
 	$(CC) $(CCFLAGS) -o ${BUILDDIR}/${BUILDFILE} ${SRCDIR}/*.c 
 	@if [ -z $? ]; then \
+		make release; \
 		./${BUILDDIR}/${BUILDFILE} ./routes "127.0.0.1" "8080"; \
 	fi

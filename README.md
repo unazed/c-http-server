@@ -2,6 +2,7 @@
 `that's enough python http servers`
 
 <h2>Summary</h2>
+
 A simple route-based HTTP server, with a HTTP/TCP stack built on native sockets. Built specific to the GNU C compiler (-std=gnu11), combining a plethora of interesting C extensions, and type-generic-oriented style, with an excessive naming style that prefixes a majority of library functions with `__int_`.
 
 <h2>Compilation & usage</h2>

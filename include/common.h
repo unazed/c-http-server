@@ -25,6 +25,14 @@
 #endif /* CALLBACK_DEBUG */
 
 #if 1
+#define cb_error(msg, ...) \
+  printf ("\x1b[31m(callback:%s:%d)\033[0m " msg "\n", __FILE__, __LINE__,\
+          ##__VA_ARGS__)
+#else
+#define cb_error(msg, ...) do { } while (0)
+#endif /* CALLBACK_ERROR */
+
+#if 1
 #define warn(msg, ...)                                                    \
   printf ("\x1b[33m(warning:%s:%d)\033[0m " msg "\n", __FILE__, __LINE__, \
           ##__VA_ARGS__)
