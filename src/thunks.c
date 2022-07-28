@@ -11,12 +11,15 @@ static struct __thunk_tag
 static struct
 {
   void** thunks;
-  size_t n_thunks, capacity;
-  size_t nr_gaps;
+  size_t nr_inuse_thunks,
+         nr_total_thunks,  /* sanity check, nr_gaps + nr_allocated_thunks */
+         nr_gaps,
+         capacity;
 } __int_thunk_table = {
   .thunks = NULL,
   .capacity = 0,
-  .n_thunks = 0,
+  .nr_inuse_thunks = 0,
+  .nr_total_thunks = 0,
   .nr_gaps = 0
 };
 
@@ -56,9 +59,12 @@ __int_deallocate_thunk (void* thunk)
 {
   struct __thunk_tag* tag
     = (void *)( (unsigned char*)thunk - sizeof (struct __thunk_tag) );
-  debug ("deallocating thunk #%zu @ %p", tag->thunk_idx, thunk);
   __int_thunk_table.thunks[tag->thunk_idx] = NULL;
   ++__int_thunk_table.nr_gaps;
+  --__int_thunk_table.nr_inuse_thunks;
+  debug ("deallocating thunk #%zu (in use: %zu, gaps: %zu, total: %zu)",
+         tag->thunk_idx, __int_thunk_table.nr_inuse_thunks,
+         __int_thunk_table.nr_gaps, __int_thunk_table.nr_total_thunks);
   free (tag);
 }
 
@@ -71,17 +77,21 @@ __int_deallocate_thunk_table (void)
    * to have control over the finalization later down the road
    */
   size_t nr_deallocated = 0;
-  for (size_t i = 0; i < __int_thunk_table.n_thunks; ++i)
+  for (size_t i = 0; i < __int_thunk_table.nr_total_thunks; ++i)
     if (__int_thunk_table.thunks[i] != NULL)
       {
         free (__int_thunk_table.thunks[i]);
+        __int_thunk_table.thunks[i] = NULL;
         ++nr_deallocated;
       }
-  if (nr_deallocated != __int_thunk_table.n_thunks - __int_thunk_table.nr_gaps)
-    panic ("discrepancy in number of thunks deallocated (%zu != %zu)",
-      nr_deallocated, __int_thunk_table.n_thunks - __int_thunk_table.nr_gaps);
+  if (nr_deallocated != __int_thunk_table.nr_inuse_thunks)
+    panic (
+      "discrepancy in number of thunks deallocated "
+      "(freed: %zu expected: != %zu)",
+      nr_deallocated, __int_thunk_table.nr_inuse_thunks
+      - __int_thunk_table.nr_gaps);
   debug ("deallocated %zu (- %zu empty) thunks",
-        __int_thunk_table.n_thunks, __int_thunk_table.nr_gaps);
+        nr_deallocated, __int_thunk_table.nr_gaps);
 }
 
 static void
@@ -97,29 +107,40 @@ __int_set_thunk_rwx (void* thunk, size_t size)
 void*
 __int_allocate_thunk (void* from, void* thisptr)
 {
-  size_t n_thunks = __int_thunk_table.n_thunks,
+  size_t nr_inuse_thunks = __int_thunk_table.nr_inuse_thunks,
+         nr_total_thunks = __int_thunk_table.nr_total_thunks,
          capacity = __int_thunk_table.capacity,
-         next_free_idx = n_thunks;
-
+         next_free_idx = __int_thunk_table.nr_total_thunks;
   extern unsigned char  __start_int_thunk[];
   extern unsigned char __stop_int_thunk[];
   ptrdiff_t size = __stop_int_thunk - __start_int_thunk;
 
+  if (nr_total_thunks != nr_inuse_thunks + __int_thunk_table.nr_gaps)
+    panic (
+      "discrepancy in number of thunks in use (expected: %zu !="
+      " %zu in use + %zu gaps)",
+      nr_total_thunks, nr_inuse_thunks, __int_thunk_table.nr_gaps
+    );
+
   if (__int_thunk_table.nr_gaps > 0)
     {
-      for (next_free_idx = 0; next_free_idx < n_thunks; ++next_free_idx)
+      for (next_free_idx = 0; next_free_idx < nr_total_thunks; ++next_free_idx)
         if (__int_thunk_table.thunks[next_free_idx] == NULL)
           break;
-      debug ("filled thunk gap at index #%zu", next_free_idx);
+      debug ("filled thunk gap at index #%zu, %zu are now in use",
+             next_free_idx , nr_inuse_thunks + 1);
       --__int_thunk_table.nr_gaps;
+      if (!nr_total_thunks)
+        panic ("sanity check: founds %zu gaps when no total thunks",
+               __int_thunk_table.nr_gaps);
+      --__int_thunk_table.nr_total_thunks;
     }
-  else
-    ++__int_thunk_table.n_thunks;
-    
-  if (n_thunks == capacity)
+
+  if (nr_inuse_thunks == capacity)
     {
       if (__int_thunk_table.nr_gaps > 0)
-        panic ("thunk table is full, but there are still gaps");
+        panic ("thunk table is full, but there are still %zu gaps",
+          __int_thunk_table.nr_gaps);
       __int_thunk_table.thunks = realloc (
         __int_thunk_table.thunks,
         sizeof (*__int_thunk_table.thunks) * (capacity + N_THUNK_INCR)
@@ -137,7 +158,11 @@ __int_allocate_thunk (void* from, void* thisptr)
        = memalign (sysconf (_SC_PAGE_SIZE), sizeof (struct __thunk_tag) + size),
     size
   );
-  debug ("allocated thunk #%zu @ %p", next_free_idx, to);
+  ++__int_thunk_table.nr_inuse_thunks;
+  ++__int_thunk_table.nr_total_thunks;
+  debug ("allocated thunk #%zu (in use: %zu, gaps: %zu, total: %zu)",
+         next_free_idx, __int_thunk_table.nr_inuse_thunks,
+         __int_thunk_table.nr_gaps, __int_thunk_table.nr_total_thunks);
   struct __thunk_tag thunk_tag = {
     .callee = from,
     .this = thisptr,

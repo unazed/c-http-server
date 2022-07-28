@@ -104,7 +104,7 @@ __int_cb_client_readable (httpserver_t this, tcp_client_t who)
     who->connection.op.close ();
     /* this may double-free when malloc() already failed in
      * `g_http_methods.parse_methodline`, but at that point
-     * we're already in a bad state, and we can accept fate
+     * we're already in a bad state, and we can accept our fate
      */
     free (methodline);
   }
