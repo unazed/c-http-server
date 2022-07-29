@@ -45,7 +45,7 @@ typedef struct __int_tcp_conninfo (*__int_getaddr_fn)(void);
 typedef typeof (((struct __int_tcp_conninfo*)NULL)->address) tcp_address_t;
 typedef typeof (((struct __int_tcp_conninfo*)NULL)->port) tcp_port_t;
 
-typedef struct __int_tcp_socket
+struct __int_tcp_socket
 {
   struct
   {

@@ -1,7 +1,9 @@
-CCFLAGS :=  -g -Wall -Wno-maybe-uninitialized \
-			-Wno-unused-function -Wno-unused-variable -Wno-format-extra-args
+CCFLAGS :=  -g -DMALLOC_DEBUG -Wall -Wno-maybe-uninitialized \
+			-Wno-unused-function -Wno-unused-variable -Wno-format-extra-args \
+			-Wno-incompatible-pointer-types
 CCXFLAGS :=  -Os -Wall -Wno-maybe-uninitialized \
-			-Wno-unused-function -Wno-unused-variable -Wno-format-extra-args
+			-Wno-unused-function -Wno-unused-variable -Wno-format-extra-args \
+			-Wno-incompatible-pointer-types
 INCDIR = include
 SRCDIR = src
 BUILDDIR = build
@@ -18,6 +20,6 @@ release:
 all:
 	$(CC) $(CCFLAGS) -o ${BUILDDIR}/${BUILDFILE} ${SRCDIR}/*.c 
 	@if [ -z $? ]; then \
-		make release; \
+		make release > /dev/null 2>&1; \
 		./${BUILDDIR}/${BUILDFILE} ./routes "127.0.0.1" "8080"; \
 	fi

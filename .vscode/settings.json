@@ -4,6 +4,7 @@
       "routes.h": "c",
       "functional": "c",
       "common.h": "c",
-      "httpserver.h": "c"
+      "httpserver.h": "c",
+      "restype.h": "c"
     }
 }

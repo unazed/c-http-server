@@ -4,7 +4,7 @@
 #include "../include/common.h"
 #include "../include/restype.h"
 
-extern inline void
+void
 __int_cb_register_callbacks (httpserver_t server)
 {
   server->__int.tcp_server->callbacks.client_connected =
@@ -97,7 +97,7 @@ __int_cb_client_disconnected (httpserver_t this, tcp_client_t who)
 __THUNK_DECL void
 __int_cb_client_readable (httpserver_t this, tcp_client_t who)
 {
-  void
+  void  /* intellisense doesn't like nested functions */
   when_parser_fails (const char* msg, httpmethodline_t methodline)
   {
     cb_error ("HTTP request failed to parse: '%s'", msg);
@@ -106,16 +106,27 @@ __int_cb_client_readable (httpserver_t this, tcp_client_t who)
      * `g_http_methods.parse_methodline`, but at that point
      * we're already in a bad state, and we can accept our fate
      */
-    free (methodline);
+    if (methodline != NULL)
+      free (methodline);
   }
-
+#pragma GCC diagnostic ignored "-Wuninitialized"
+#pragma GCC diagnostic push
   httpmethodline_t method_line = try_unwrap (
     g_http_methods.parse_methodline (__int_http_read_header_line (who)),
     (result_action_t){ .otherwise = when_parser_fails,
-                       .aux_data = method_line });
+                       .pass_on = method_line });
   if (method_line == NULL)
     return;
-
+  while (true)
+    {
+      httpheader_t header = try_unwrap (
+        g_http_methods.parse_headerline (__int_http_read_header_line (who)),
+        (result_action_t){ .otherwise = when_parser_fails,
+                           .pass_on = header });
+      if (header == NULL)
+        break;
+    }
+#pragma GCC diagnostic pop  
 }
 
 __THUNK_DECL void
