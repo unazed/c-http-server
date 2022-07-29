@@ -6,10 +6,13 @@
 #include <stdlib.h>
 #define result_type_of(ty) result_t  /* purely expressive */
 
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#pragma GCC diagnostic push
 #define result_with_value(v) (result_t){ \
   .has_error = false, \
   .value = *(uint64_t *)&v, \
   }
+#pragma GCC diagnostic pop
 
 #define result_with_error(v) (result_t){ \
   .has_error = true, \
@@ -25,7 +28,7 @@ typedef struct
 typedef struct
 {
   void (*otherwise)(const char* error, void* data);
-  void *aux_data;
+  void *pass_on;
 } result_action_t;
 
 __attribute__ ((weak))
@@ -34,10 +37,13 @@ try_unwrap (result_t result, result_action_t action)
 {
   if (result.has_error)\
     {
-      action.otherwise (result.error, action.aux_data);
+      action.otherwise (result.error, action.pass_on);
       return NULL;
     }
+#pragma GCC diagnostic ignored "-Wint-conversion"
+#pragma GCC diagnostic push
   return result.value;
+#pragma GCC diagnostic pop
 }
 
 #endif /* __RESTYPE_H */

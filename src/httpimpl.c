@@ -5,12 +5,12 @@
 #include <string.h>
 #include <ctype.h>
 
-result_type_of (httpmethodline_t) 
+static result_type_of (httpmethodline_t) 
 parse_methodline (raw_httpheader_t methodline)
 {
   if (methodline == NULL)
     return result_with_error ("methodline is NULL");
-  httpmethodline_t ret = calloc (1, sizeof (httpmethodline_t));
+  httpmethodline_t ret = calloc (1, sizeof (*(httpmethodline_t)(0)));
   if (ret == NULL)
     return result_with_error ("methodline malloc() failed");
   ret->verb = methodline;
@@ -37,6 +37,12 @@ parse_methodline (raw_httpheader_t methodline)
   return result_with_value (ret);
 }
 
+static result_type_of (httpheader_t)
+parse_headerline (raw_httpheader_t header)
+{
+}
+
 struct __g_http_methods g_http_methods = {
-  .parse_methodline = parse_methodline
+  .parse_methodline = parse_methodline,
+  .parse_headerline = parse_headerline
 };

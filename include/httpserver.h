@@ -27,7 +27,7 @@ __THUNK_DECL void __int_set_route_table_thunk (httpserver_t this,
   route_table_t route_table);
 __THUNK_DECL void __int_start_event_loop_thunk (httpserver_t this);
 /* callbacks, impl. in: src/httpcallbacks.c */
-inline void __int_cb_register_callbacks (httpserver_t server);
+void __int_cb_register_callbacks (httpserver_t server);
 __THUNK_DECL void __int_cb_client_connected (httpserver_t this,
   tcp_client_t who);
 __THUNK_DECL void __int_cb_client_disconnected (httpserver_t this,

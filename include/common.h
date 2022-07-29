@@ -7,6 +7,9 @@
 #include <stdarg.h>
 #include <errno.h>
 
+#pragma GCC diagnostic ignored "-Wformat"
+#pragma GCC diagnostic push
+
 #if 1
 #define debug(msg, ...)                                                \
   printf ("\x1B[32m(debug:%s:%d)\033[0m " msg "\n", __FILE__, __LINE__,\
@@ -60,5 +63,7 @@
     );                                                                \
     exit (EXIT_FAILURE);                                              \
   })
+
+#pragma GCC diagnostic pop
 
 #endif /* __COMMON_H */
