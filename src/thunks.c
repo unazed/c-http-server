@@ -54,9 +54,12 @@ __int_allocate_thunk_table (void)
   __int_thunk_table.capacity = N_INIT_THUNKS;
 }
 
-inline static void
-__int_deallocate_thunk (void* thunk)
+void
+__int_deallocate_thunk (void* thunk, ...)
 {
+  if (thunk == NULL)
+    return;
+
   struct __thunk_tag* tag
     = (void *)( (unsigned char*)thunk - sizeof (struct __thunk_tag) );
   __int_thunk_table.thunks[tag->thunk_idx] = NULL;
@@ -81,6 +84,7 @@ __int_deallocate_thunk_table (void)
     if (__int_thunk_table.thunks[i] != NULL)
       {
         free (__int_thunk_table.thunks[i]);
+        debug ("deallocated thunk #%zu", i);
         __int_thunk_table.thunks[i] = NULL;
         ++nr_deallocated;
       }
