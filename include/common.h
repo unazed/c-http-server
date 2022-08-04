@@ -10,12 +10,21 @@
 #pragma GCC diagnostic ignored "-Wformat"
 #pragma GCC diagnostic push
 
-#if 1
+#if 0
 #define debug(msg, ...)                                                \
   printf ("\x1B[32m(debug:%s:%d)\033[0m " msg "\n", __FILE__, __LINE__,\
           ##__VA_ARGS__)
 #else
 #define debug(msg, ...) \
+  do { } while (0)
+#endif /* DEBUG */
+
+#if 1
+#define thk_debug(msg, ...)                                                \
+  printf ("\x1B[35m(thunk:%s:%d)\033[0m " msg "\n", __FILE__, __LINE__,\
+          ##__VA_ARGS__)
+#else
+#define thk_debug(msg, ...) \
   do { } while (0)
 #endif /* DEBUG */
 

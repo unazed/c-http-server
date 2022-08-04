@@ -88,7 +88,10 @@ __int_match_thunk (const char *const expr, const char *const value)
 inline static route_match_fn
 __int_create_match_thunk (const char *const expr)
 {
-  return __int_allocate_thunk (__int_match_thunk, (void *)expr);
+  return g_thunks.allocate_thunk (
+    "create_route_match",
+    __int_match_thunk, (void *)expr
+  );
 }
 
 static void
@@ -128,7 +131,8 @@ __int_parse_route_table_entries (route_table_t route_table, FILE * f_route)
 inline static register_routes_fn
 __int_create_register_routes_thunk (route_table_t route_table)
 {
-  register_routes_fn thunk = __int_allocate_thunk (
+  register_routes_fn thunk = g_thunks.allocate_thunk (
+    "register_routes",
     __int_register_routes_thunk,
     route_table
   );

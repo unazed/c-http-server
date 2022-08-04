@@ -5,6 +5,8 @@
       "functional": "c",
       "common.h": "c",
       "httpserver.h": "c",
-      "restype.h": "c"
+      "restype.h": "c",
+      "stdint.h": "c",
+      "stdbool.h": "c"
     }
 }

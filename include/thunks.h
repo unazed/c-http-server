@@ -19,18 +19,19 @@ static void* __int_thunk ();
 __attribute__((constructor))
 static void __int_allocate_thunk_table (void);
 
-inline static void __int_deallocate_thunk (void* thunk);
+void __int_deallocate_thunk (void* thunk);
 
 __attribute__((destructor))
 static void __int_deallocate_thunk_table (void);
 
 static void __int_set_thunk_rwx (void* thunk, size_t size);
 
-void* __int_allocate_thunk (void* from, void* thisptr);
+void* __int_allocate_thunk (const char* ident, void* from, void* thisptr);
 
 struct __g_thunks
 {
   typeof (__int_deallocate_thunk)* deallocate_thunk;
+  typeof (__int_allocate_thunk)* allocate_thunk;
 };
 
 extern struct __g_thunks g_thunks;

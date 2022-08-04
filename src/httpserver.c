@@ -21,11 +21,13 @@ __int_start_event_loop_thunk (httpserver_t this)
 static void
 __int_allocate_thunks (httpserver_t server)
 {
-  server->set_route_table = __int_allocate_thunk (
+  server->set_route_table = g_thunks.allocate_thunk (
+    "http_set_route_table",
     __int_set_route_table_thunk,
     server
   );
-  server->start_event_loop = __int_allocate_thunk (
+  server->start_event_loop = g_thunks.allocate_thunk (
+    "http_start_event_loop",
     __int_start_event_loop_thunk,
     server    
   );

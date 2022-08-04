@@ -8,13 +8,25 @@ void
 __int_cb_register_callbacks (httpserver_t server)
 {
   server->__int.tcp_server->callbacks.client_connected =
-    __int_allocate_thunk (__int_cb_client_connected, server);
+    g_thunks.allocate_thunk (
+      "on_client_connect",
+      __int_cb_client_connected, server
+    );
   server->__int.tcp_server->callbacks.client_disconnected =
-    __int_allocate_thunk (__int_cb_client_disconnected, server);
+    g_thunks.allocate_thunk (
+      "on_client_disconnect",
+      __int_cb_client_disconnected, server
+    );
   server->__int.tcp_server->callbacks.client_readable =
-    __int_allocate_thunk (__int_cb_client_readable, server);
+    g_thunks.allocate_thunk (
+      "on_client_readable",
+      __int_cb_client_readable, server
+    );
   server->__int.tcp_server->callbacks.client_writable =
-    __int_allocate_thunk (__int_cb_client_writable, server);
+    g_thunks.allocate_thunk (
+      "on_client_writable",
+      __int_cb_client_writable, server
+    );
 }
 
 static recv_ret_t sz_initial_recv = ALG_INCR_INITIAL_RECV;
@@ -55,8 +67,6 @@ __int_sk_incremental_find (
               search_buffer[i + sz_pattern] = '\0';
               *into = search_buffer;
               sz_initial_recv = (sz_initial_recv + nr_recv) / 2;
-              cb_debug ("incrementing initial recv size from %d to %d",
-                sz_initial_recv * 2 - nr_recv, sz_initial_recv);
               return i + sz_pattern;
             }
         }
@@ -75,7 +85,6 @@ __int_http_read_header_line (tcp_client_t from)
   recv_ret_t sz_header = __int_sk_incremental_find (from, &header, "\r\n");
   if (sz_header == -1)
     return NULL;
-  cb_debug ("size of header = %zu", sz_header);
   from->connection.op.recv (NULL, sz_header);
   return header;
 }
@@ -92,15 +101,13 @@ __int_cb_client_disconnected (httpserver_t this, tcp_client_t who)
   cb_debug ("client disconnected: %p", who);
 }
 
-
-
 __THUNK_DECL void
 __int_cb_client_readable (httpserver_t this, tcp_client_t who)
 {
   void  /* intellisense doesn't like nested functions */
   when_parser_fails (const char* msg, httpmethodline_t methodline)
   {
-    cb_error ("HTTP request failed to parse: '%s'", msg);
+    cb_error ("HTTP request failed to parse methodline: '%s'", msg);
     who->connection.op.close ();
     /* this may double-free when malloc() already failed in
      * `g_http_methods.parse_methodline`, but at that point
@@ -109,23 +116,47 @@ __int_cb_client_readable (httpserver_t this, tcp_client_t who)
     if (methodline != NULL)
       free (methodline);
   }
+  void
+  when_context_fails (const char* msg, httpcontext_t context)
+  {
+    cb_error ("HTTP request failed to parse headers: '%s'", msg);
+    who->connection.op.close ();
+    if (context != NULL)
+      context->free ();
+  }
 #pragma GCC diagnostic ignored "-Wuninitialized"
 #pragma GCC diagnostic push
-  httpmethodline_t method_line = try_unwrap (
-    g_http_methods.parse_methodline (__int_http_read_header_line (who)),
-    (result_action_t){ .otherwise = when_parser_fails,
-                       .pass_on = method_line });
+  httpmethodline_t method_line =
+    g_http_methods.parse_methodline (__int_http_read_header_line (who))
+    .try_unwrap ((result_action_t){
+      .otherwise = when_parser_fails,
+      .pass_on = method_line
+    });
   if (method_line == NULL)
     return;
+  httpcontext_t context = g_http_methods.create_context ();
   while (true)
     {
-      httpheader_t header = try_unwrap (
-        g_http_methods.parse_headerline (__int_http_read_header_line (who)),
-        (result_action_t){ .otherwise = when_parser_fails,
-                           .pass_on = header });
+      httpheader_t header =
+        g_http_methods.parse_headerline (__int_http_read_header_line (who))
+        .try_unwrap ((result_action_t){
+          .otherwise = when_parser_fails,
+          .pass_on = header
+        });
       if (header == NULL)
         break;
+      context->update_from_header (header).try_unwrap ((result_action_t){
+        .otherwise = when_context_fails,
+        .pass_on = context
+      });
+      if (who->connection.closed)
+        goto finalize;
     }
+  /* TODO: serve request */
+finalize:
+  cb_debug ("finalising HTTP request, deallocating resources");
+  context->free ();
+  free (method_line);
 #pragma GCC diagnostic pop  
 }
 
