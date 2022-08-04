@@ -65,6 +65,7 @@ struct __int_tcp_socket
   } cfg;
   tcp_sockfd_t sockfd;
   bool is_blocking;
+  bool closed;
 };
 
 typedef struct __int_tcp_client

@@ -207,6 +207,7 @@ __int_ts_socket_close (tcp_client_t self)
   debug ("closing TCP socket (fd=%d)", self->connection.sockfd);
   if (close (self->connection.sockfd) == -1)
     panic ("failed to close TCP socket (fd=%d)", self->connection.sockfd);
+  self->connection.closed = true;
   self->connection.__int.free ();
 }
 
@@ -222,27 +223,40 @@ __int_ts_accept (tcpserver_t server)
       "failed to accept TCP socket (fd=%d)",
       server->__int_stream.self.sockfd
     );
-  tcp_client_t client = malloc (sizeof (struct __int_tcp_client));
+  tcp_client_t client = calloc (1, sizeof (struct __int_tcp_client));
   if (client == NULL)
     panic ("failed to allocate memory for TCP client");
   client->connection.sockfd = sockfd;
-  client->connection.__int.free = __int_allocate_thunk (
+  client->connection.__int.free = g_thunks.allocate_thunk (
+    "tcp_socket_free",
     __int_tcp_socket_free, client
   );
-  client->connection.op.get_address = __int_allocate_thunk (
+  client->connection.op.get_address = g_thunks.allocate_thunk (
+    "socket_getaddr",
     __int_ts_getaddr, client
   );
-
-  client->connection.op.recv = __int_allocate_thunk (__int_ts_recv, client);
-  client->connection.op.send = __int_allocate_thunk (__int_ts_send, client);
-  client->connection.op.peek = __int_allocate_thunk (__int_ts_peek, client);
-
-  client->connection.cfg.set_recv_low_watermark = __int_allocate_thunk (
+  client->connection.op.recv = g_thunks.allocate_thunk (
+    "socket_recv",
+    __int_ts_recv, client
+  );
+  client->connection.op.send = g_thunks.allocate_thunk (
+    "socket_send",
+    __int_ts_send, client
+  );
+  client->connection.op.peek = g_thunks.allocate_thunk (
+    "socket_peek",
+    __int_ts_peek, client
+  );
+  client->connection.cfg.set_recv_low_watermark = g_thunks.allocate_thunk (
+    "socket_set_recv_low_watermark",
     __int_set_recv_low_watermark, server
   );
-  client->connection.op.close = __int_allocate_thunk (
+  client->connection.op.close = g_thunks.allocate_thunk (
+    "socket_close",
     __int_ts_socket_close, client
   );
+  client->connection.closed = false;
+
   return client;
 }
 
@@ -374,6 +388,7 @@ static void
 __int_allocate_thunks (tcpserver_t server)
 {
   server->start_event_loop = __int_allocate_thunk (
+    "tcp_start_event_loop",
     __int_ts_start_event_loop, server
   );
 }

@@ -5,6 +5,7 @@ static struct __thunk_tag
   void (*callee)();
   void* this;
   size_t thunk_idx;
+  const char* ident;
   const char code[0];
 } thunk_tag; /* warning: useless storage class specifier in empty declaration */
 
@@ -50,12 +51,12 @@ __int_allocate_thunk_table (void)
     sizeof (__int_thunk_table.thunks));
   if (__int_thunk_table.thunks == NULL)
     panic ("failed to allocate initial thunk table");
-  debug ("allocated capacity for %d thunks", N_INIT_THUNKS);
+  thk_debug ("allocated capacity for %d thunks", N_INIT_THUNKS);
   __int_thunk_table.capacity = N_INIT_THUNKS;
 }
 
 void
-__int_deallocate_thunk (void* thunk, ...)
+__int_deallocate_thunk (void* thunk)
 {
   if (thunk == NULL)
     return;
@@ -65,8 +66,9 @@ __int_deallocate_thunk (void* thunk, ...)
   __int_thunk_table.thunks[tag->thunk_idx] = NULL;
   ++__int_thunk_table.nr_gaps;
   --__int_thunk_table.nr_inuse_thunks;
-  debug ("deallocating thunk #%zu (in use: %zu, gaps: %zu, total: %zu)",
-         tag->thunk_idx, __int_thunk_table.nr_inuse_thunks,
+  thk_debug ("deallocating thunk #%zu \"%s\" "
+             "(in use: %zu, gaps: %zu, total: %zu)",
+         tag->thunk_idx, tag->ident, __int_thunk_table.nr_inuse_thunks,
          __int_thunk_table.nr_gaps, __int_thunk_table.nr_total_thunks);
   free (tag);
 }
@@ -84,7 +86,8 @@ __int_deallocate_thunk_table (void)
     if (__int_thunk_table.thunks[i] != NULL)
       {
         free (__int_thunk_table.thunks[i]);
-        debug ("deallocated thunk #%zu", i);
+        thk_debug ("deallocated thunk #%zu \"%s\"", i,
+          ((struct __thunk_tag*)__int_thunk_table.thunks[i])->ident);
         __int_thunk_table.thunks[i] = NULL;
         ++nr_deallocated;
       }
@@ -94,7 +97,7 @@ __int_deallocate_thunk_table (void)
       "(freed: %zu expected: != %zu)",
       nr_deallocated, __int_thunk_table.nr_inuse_thunks
       - __int_thunk_table.nr_gaps);
-  debug ("deallocated %zu (- %zu empty) thunks",
+  thk_debug ("deallocated %zu (- %zu gaps) thunks",
         nr_deallocated, __int_thunk_table.nr_gaps);
 }
 
@@ -105,11 +108,10 @@ __int_set_thunk_rwx (void* thunk, size_t size)
     panic ("thunk passed was NULL, failed memalign()?");
   if (mprotect (thunk, size, PROT_READ | PROT_WRITE | PROT_EXEC) < 0)
     panic ("failed to set page privileges on thunk");
-  debug ("successfully set rwx permissions on thunk @ %p", thunk);
 }
 
 void*
-__int_allocate_thunk (void* from, void* thisptr)
+__int_allocate_thunk (const char* ident, void* from, void* thisptr)
 {
   size_t nr_inuse_thunks = __int_thunk_table.nr_inuse_thunks,
          nr_total_thunks = __int_thunk_table.nr_total_thunks,
@@ -131,7 +133,7 @@ __int_allocate_thunk (void* from, void* thisptr)
       for (next_free_idx = 0; next_free_idx < nr_total_thunks; ++next_free_idx)
         if (__int_thunk_table.thunks[next_free_idx] == NULL)
           break;
-      debug ("filled thunk gap at index #%zu, %zu are now in use",
+      thk_debug ("filled thunk gap at index #%zu, %zu are now in use",
              next_free_idx , nr_inuse_thunks + 1);
       --__int_thunk_table.nr_gaps;
       if (!nr_total_thunks)
@@ -152,7 +154,7 @@ __int_allocate_thunk (void* from, void* thisptr)
       if (__int_thunk_table.thunks == NULL)
         panic ("failed to reallocate thunk table");
       __int_thunk_table.capacity += N_THUNK_INCR;
-      debug ("reallocated thunk table to hold %zu thunks",
+      thk_debug ("reallocated thunk table to hold %zu thunks",
         __int_thunk_table.capacity);
     }
 
@@ -164,13 +166,14 @@ __int_allocate_thunk (void* from, void* thisptr)
   );
   ++__int_thunk_table.nr_inuse_thunks;
   ++__int_thunk_table.nr_total_thunks;
-  debug ("allocated thunk #%zu (in use: %zu, gaps: %zu, total: %zu)",
-         next_free_idx, __int_thunk_table.nr_inuse_thunks,
+  thk_debug ("allocated thunk #%zu \"%s\" (in use: %zu, gaps: %zu, total: %zu)",
+         next_free_idx, ident, __int_thunk_table.nr_inuse_thunks,
          __int_thunk_table.nr_gaps, __int_thunk_table.nr_total_thunks);
   struct __thunk_tag thunk_tag = {
     .callee = from,
     .this = thisptr,
     .thunk_idx = next_free_idx,
+    .ident = ident
   };
   memcpy (to, &thunk_tag, sizeof (struct __thunk_tag));
   memcpy (to + sizeof (struct __thunk_tag), __int_thunk, size);
@@ -178,5 +181,6 @@ __int_allocate_thunk (void* from, void* thisptr)
 }
 
 struct __g_thunks g_thunks = {
-  .deallocate_thunk = __int_deallocate_thunk
+  .deallocate_thunk = __int_deallocate_thunk,
+  .allocate_thunk = __int_allocate_thunk
 };
