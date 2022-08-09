@@ -19,14 +19,23 @@
   do { } while (0)
 #endif /* DEBUG */
 
-#if 1
+#if 0
 #define thk_debug(msg, ...)                                                \
   printf ("\x1B[35m(thunk:%s:%d)\033[0m " msg "\n", __FILE__, __LINE__,\
           ##__VA_ARGS__)
 #else
 #define thk_debug(msg, ...) \
   do { } while (0)
-#endif /* DEBUG */
+#endif /* THUNK_DEBUG */
+
+#if 0
+#define map_debug(msg, ...)                                                \
+  printf ("\x1B[35m(map:%s:%d)\033[0m " msg "\n", __FILE__, __LINE__,\
+          ##__VA_ARGS__)
+#else
+#define map_debug(msg, ...) \
+  do { } while (0)
+#endif /* MAP_DEBUG */
 
 #if 1
 #define cb_debug(msg, ...) \
@@ -74,5 +83,12 @@
   })
 
 #pragma GCC diagnostic pop
+
+#define calloc_ptr_type(ty) ({ \
+  ty ret = (ty)calloc (1, sizeof (*ret)); \
+  if (!ret) \
+    panic ("failed to allocate space for type " #ty); \
+  ret; \
+})
 
 #endif /* __COMMON_H */
