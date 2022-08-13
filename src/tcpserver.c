@@ -91,13 +91,11 @@ __int_ts_generic_recv (tcp_client_t self, void* buf, size_t len, int flags)
   recv_ret_t ret;
   bool allocated_tmp_buf = false;
 
-  debug ("trying to receive %zu bytes from socket (fd=%d, flags=%d)",
-         len, self->connection.sockfd, flags);
   if (buf == NULL)
     {
       if (len > NULL_RECV_BUFFER_THRESHOLD)
         {
-          warn ("allocating temporary heap (size=%zu) buffer",
+          debug ("allocating temporary heap (size=%zu) buffer",
                 len);
           buf = calloc (sizeof (*buf), len);
           allocated_tmp_buf = true;
@@ -106,14 +104,19 @@ __int_ts_generic_recv (tcp_client_t self, void* buf, size_t len, int flags)
         }   
       else
         {
-          warn ("allocating temporary stack buffer (size=%zu)", len);
+          debug ("allocating temporary stack buffer (size=%zu)", len);
           buf = alloca (len);
         }
     }
   if ((ret = recv (
       self->connection.sockfd, buf, len, flags
-      )) == -1)
-    panic ("failed to recv() from TCP socket");
+      )) <= 0)
+    {
+      warn ("failed to receive %zu byte(s) from TCP socket", len);
+      return -1;
+    }
+  debug ("trying to receive %zu byte(s) from socket, got %zu (fd=%d, flags=%d)",
+         len, ret, self->connection.sockfd, flags);
   if (allocated_tmp_buf)
     {
       warn ("temporary heap buffer deallocated, read %d bytes", ret);
@@ -205,6 +208,7 @@ __THUNK_DECL void
 __int_ts_socket_close (tcp_client_t self)
 {
   debug ("closing TCP socket (fd=%d)", self->connection.sockfd);
+  shutdown (self->connection.sockfd, SHUT_RDWR);
   if (close (self->connection.sockfd) == -1)
     panic ("failed to close TCP socket (fd=%d)", self->connection.sockfd);
   self->connection.closed = true;
@@ -344,10 +348,10 @@ __int_ts_start_event_loop (tcpserver_t server)
             /* this is preemptive; works if there is no user data in the
              * buffer, otherwise closing is handled at application level
              */
-            ssize_t nr_read = recv (
-              client->connection.sockfd, NULL, 1, MSG_PEEK
+            recv_ret_t nr_read = __int_ts_peek (
+              client, NULL, 1
             );
-            if (__builtin_expect (!nr_read, 0))
+            if (__builtin_expect (nr_read <= 0, 0))
               {
                 debug ("TCP socket (fd=%d) closed by peer, reason: %s",
                        client->connection.sockfd, strerror (errno));
