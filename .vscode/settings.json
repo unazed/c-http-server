@@ -9,6 +9,13 @@
       "stdint.h": "c",
       "stdbool.h": "c",
       "ratio": "cpp",
-      "thunks.h": "c"
+      "thunks.h": "c",
+      "array": "c",
+      "*.tcc": "c",
+      "memory": "c",
+      "istream": "c",
+      "tuple": "c",
+      "utility": "c",
+      "variant": "c"
     }
 }

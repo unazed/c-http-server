@@ -8,17 +8,12 @@
 #include <limits.h>
 #include <inttypes.h>
 
-#define try_alloc_space_for(ptr_ty) \
-  calloc (1, sizeof (*(ptr_ty)0)); \
-  if (ret == NULL) \
-    return result_with_error ("failed to allocate space for " #ptr_ty)
-
 static result_type_of (httpmethodline_t) 
 parse_methodline (raw_httpheader_t methodline)
 {
   if (methodline == NULL)
     return result_with_error ("methodline is NULL");
-  httpmethodline_t ret = try_alloc_space_for (httpmethodline_t);
+  httpmethodline_t ret = calloc_ptr_type (httpmethodline_t);
   ret->verb = methodline;
   ret->path = strchrnul (methodline, ' ');
   if (*ret->path == '\0')
@@ -44,64 +39,78 @@ parse_methodline (raw_httpheader_t methodline)
 }
 
 static raw_httpheader_t
-strip_whitespace (const raw_httpheader_t header)
+lstrip_whitespace (raw_httpheader_t header)
 {
-  if (header == NULL)
-    return NULL;
-  raw_httpheader_t ret = header;
-  while (isspace (*ret))
-    ++ret;
+  while (isspace (*header))
+    ++header;
+  return header;
+}
+
+static httphashlist_t
+parse_http_item_properties (raw_httpheader_t properties, char sep)
+{
+  __builtin_unimplemented ();
+}
+
+static httphashlist_t
+parse_http_list_item (raw_httpheader_t item, char sep, char inv_sep)
+{
+  httphashlist_t ret = g_hashmap.new ();
+  ret->set (create_empty_hashmap_entry ("name"));
+  ret->set (create_empty_hashmap_entry ("value"));
+  ret->set (create_empty_hashmap_entry ("properties"));
+  char* property_separation = strchrnul (item, inv_sep);
+  if (*property_separation != '\0')
+    {
+      *property_separation++ = '\0';
+      ret->set (create_hashmap_entry (
+        "properties", parse_http_item_properties (property_separation, sep),
+        false, true
+      ));
+    }
+  char* value_separation = strchrnul (item, '=');
+  if (*value_separation != '\0')
+    {
+      *value_separation++ = '\0';
+      ret->set (create_hashmap_entry (
+        "value", value_separation,
+        false, false
+      ));
+    }
+    
+  ret->set (create_hashmap_entry (
+    "name", item,
+    false, false
+  ));
   return ret;
 }
 
-static struct http_list_item*
-parse_http_list_item (raw_httpheader_t entry, char inv_sep)
-{
-  struct http_list_item* item = calloc (1, sizeof (*item));
-  raw_httpheader_t sep = strchrnul (entry, '=');
-  if (*sep == '\0')
-    {
-      /* e.g.: `Accept: text/html,application/xhtml+xml */
-      item->name = strip_whitespace (entry);
-      return item;
-    }
-  *sep++ = '\0';
-  item->name = strip_whitespace (entry);
-  item->value = strip_whitespace (sep);
-  return item;
-}
-
-static httplist_t
+static httphashlist_t
 parse_http_list (raw_httpheader_t header, char sep, char inv_sep)
 {
-  httplist_t list = calloc (1, sizeof (*list));
-  if (list == NULL)
-    panic ("failed to allocate HTTP list");
-
-  list->items = calloc (1, sizeof (*list->items));
-  if (list->items == NULL)
-    panic ("failed to allocate HTTP list items");
-
-  while (*header)
+  httphashlist_t hash_list = g_hashmap.new ();
+  while (true)
     {
-      raw_httpheader_t next_hdr = strchrnul (header, sep);
-      if (*next_hdr == '\0')
+      raw_httpheader_t separation = strchrnul (header, sep),
+                       stripped_header = lstrip_whitespace (header);
+      if (*separation == '\0')
         {
-          /* when on last item */
-          list->items[list->nr_items++]
-            = parse_http_list_item (header, inv_sep);
+          hash_list->set (create_hashmap_entry (
+            stripped_header,
+            parse_http_list_item (stripped_header, sep, inv_sep),
+            false, true
+          ));
           break;
         }
-      *next_hdr++ = '\0';
-      list->items[list->nr_items++] = parse_http_list_item (header, inv_sep);
-      list->items = realloc (list->items,
-        sizeof (*list->items) * (list->nr_items + 1));
-      if (list->items == NULL)
-        panic ("failed to allocate (further) HTTP list items");
-      header = next_hdr;
+      *separation++ = '\0';
+      hash_list->set (create_hashmap_entry (
+        stripped_header,
+        parse_http_list_item (stripped_header, sep, inv_sep),
+        false, true
+      ));
+      header = separation;
     }
-  cb_debug ("parsed HTTP list with %zu items", list->nr_items);
-  return list;
+  return hash_list;
 }
 
 static void
@@ -162,7 +171,7 @@ parse_headerline (raw_httpheader_t header)
     return result_with_error ("header is NULL");
   if (!strncmp (header, CRLF, sizeof (CRLF)))
     return result_with_value (NULL);
-  httpheader_t ret = try_alloc_space_for (httpheader_t);
+  httpheader_t ret = calloc_ptr_type (httpheader_t);
   raw_httpheader_t val = strchrnul (header, ':'),
                    crlf_pos = strchrnul (header, CRLF[0]);
   if (*crlf_pos == '\0')
@@ -172,7 +181,7 @@ parse_headerline (raw_httpheader_t header)
     return result_with_error ("header has no value separator");
   *val++ = '\0';
   ret->name = header;
-  ret->value_as.raw = strip_whitespace (val);
+  ret->value_as.raw = lstrip_whitespace (val);
   identify_header_type (ret);
   return result_with_value (ret);
 }
@@ -222,46 +231,20 @@ case HTTPHEADER_ACCEPT:
     cb_debug ("setting accept to %s", header->value_as.raw); 
     context->connection.accept
       = parse_http_list (header->value_as.raw, ',', ';');
-    add_to_free_list (context, context->connection.accept);
-    for (size_t i = 0; i < context->connection.accept->nr_items; i++)
-      {
-        add_to_free_list (context, context->connection.accept->items[i]);
-        cb_debug ("accept item %zu: %s", i,
-          context->connection.accept->items[i]->name);
-      }
     break;
   }
 case HTTPHEADER_KEEPALIVE:
   {
-    httplist_t list = parse_http_list (header->value_as.raw, ',', '\0');
-    add_to_free_list (context, list);
-    size_t max, timeout;
-    cb_debug ("parsing Keep-Alive header");
-    for (size_t i = 0; i < list->nr_items; ++i)
-      {
-        struct http_list_item* item = list->items[i];
-        add_to_free_list (context, item);
-        if (item->value == NULL)
-          return result_with_error ("keep-alive header has invalid format");
-        if (!strcasecmp (item->name, "timeout"))
-          {
-            if (!parse_numeric (&context->connection.keep_alive.timeout,
-                item->name))
-              return result_with_error ("keep-alive timeout is non-numeric");
-          }
-        else if (!strcasecmp (item->name, "max"))
-          if (!parse_numeric (&context->connection.keep_alive.max_reqs,
-              item->name))
-            return result_with_error ("keep-alive max is non-numeric");
-      }
+    cb_debug ("allocating keep-alive http list");
+    httphashlist_t list = parse_http_list (header->value_as.raw, ',', '\0');
+    list->free ();
     break;
   }
 case HTTPHEADER_ACCEPT_ENCODING:
   {
-    cb_debug ("setting accept encoding to %s", header->value_as.raw); 
-    httplist_t encodings = parse_http_list (header->value_as.raw, ',', ';');
-    add_to_free_list (context, encodings);
-
+    cb_debug ("allocating accept-encoding http list");
+    context->connection.encoding.allowed_encodings
+      = parse_http_list (header->value_as.raw, ',', ';');
     break;
   }
   default:
@@ -302,6 +285,11 @@ free_context (httpcontext_t ctx)
       cb_debug ("deallocating context free list item %zu", i);
       free (ctx->__int_free_list.addresses[i]);
     }
+#define try_free(map) if ((map) != NULL) map->free ()
+  try_free (ctx->cookies);
+  try_free (ctx->connection.accept);
+  try_free (ctx->connection.encoding.allowed_encodings);
+  free (ctx);
 }
 
 struct __g_http_methods g_http_methods = {

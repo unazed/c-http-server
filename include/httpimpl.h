@@ -5,46 +5,15 @@
 #include <time.h>
 #include <stdbool.h>
 #include "restype.h"
+#include "hashmap.h"
 #define CRLF ("\r\n")
 
 typedef char* raw_httpheader_t;
 typedef time_t httptimeval_t;
 typedef bool httpbool_t;
 
-typedef struct
-{
-  raw_httpheader_t name;
-  raw_httpheader_t value;
-  struct
-  {
-    httptimeval_t expires, max_age;
-    raw_httpheader_t domain, path, same_site;
-    bool secure, http_only;
-  } attr;
-} *httpcookiejar_t;
-
-struct http_list_property
-{
-  raw_httpheader_t name;
-  raw_httpheader_t value;
-};
-
-struct http_list_item
-{
-  struct
-  {
-    struct http_list_property** properties;
-    size_t nr_properties;
-  };
-  raw_httpheader_t name;
-  raw_httpheader_t value;
-};
-
-typedef struct httplist
-{
-  struct http_list_item** items;
-  size_t nr_items;
-} *httplist_t;
+typedef hashmap_t httpcookiejar_t;
+typedef hashmap_t httphashlist_t;
 
 enum httpheader_value_type
 {
@@ -81,7 +50,7 @@ typedef struct
   {
     httpcookiejar_t cookiejar;
     raw_httpheader_t raw;
-    httplist_t list;
+    httphashlist_t hash_list;
   } value_as;
 } *httpheader_t;
 
@@ -107,7 +76,7 @@ typedef struct
   {
     struct 
     {
-      httplist_t allowed_encodings;
+      httphashlist_t allowed_encodings;
       struct encoding_type* chosen_encoding;
     } encoding;
     struct 
@@ -116,7 +85,7 @@ typedef struct
       httptimeval_t timeout;
       size_t max_reqs;  /* not enforced */
     } keep_alive;
-    httplist_t accept;
+    httphashlist_t accept;
     raw_httpheader_t user_agent;
     raw_httpheader_t host;
   } connection;

@@ -21,7 +21,7 @@ hashmap_hash_notrunc (hashmap_key_t key)
 {
   hash_t hash = HASH_INITIAL_VALUE;
   typeof (*(hashmap_key_t)NULL) chr;
-  while (chr = *key++)
+  while ((chr = *key++))
     hash = ((hash << 5) + hash + chr);
   return hash;
 }
@@ -68,7 +68,7 @@ hashmap_hash (hashmap_t map, hashmap_key_t key)
   /* XXX: consider using SipHash, after i actually understand it */
   hash_t hash = HASH_INITIAL_VALUE;
   typeof (*(hashmap_key_t)NULL) chr;
-  while (chr = *key++)
+  while ((chr = *key++))
     hash = ((hash << 5) + hash + chr) % map->__int.capacity;
   return hash;
 }
@@ -76,6 +76,13 @@ hashmap_hash (hashmap_t map, hashmap_key_t key)
 hashmap_key_t
 hashmap_set (hashmap_t map, hashmap_entry_t entry)
 {
+  if (__builtin_expect (map->contains (entry->key), 0))
+    {
+      map_debug ("updating key '%s'", entry->key);
+      hashmap_entry_t existing = hashmap_find_entry_by_key (map, entry->key);
+      memcpy (existing, entry, sizeof (*existing));
+      return entry->key;
+    }
   hashmap_bucket_t bucket = hashmap_get_bucket_by_key (map, entry->key);
   *hashmap_to_last_entry (bucket) = entry;
   ++bucket->nr_entries;
@@ -89,14 +96,21 @@ hashmap_free_entry (hashmap_entry_t entry)
   if (!(entry->key_freeable || entry->val_freeable))
     return free (entry);
   if (entry->key_freeable)
-    free (entry->key);
+    {
+      map_debug ("freeing key: '%s' marked freeable", entry->key);
+      free (entry->key);
+    }
   if (entry->val_freeable)
     {
       if (entry->is_hashmap)
-        return ((hashmap_t)entry->value)->free ();
+        {
+          map_debug ("freeing hashmap entry marked freeable");
+          return ((hashmap_t)entry->value)->free ();
+        }
+      map_debug ("freeing value marked freeable");
       free (entry->value);
     }
-  free (entry);  
+  free (entry);
 }
 
 static hashmap_entry_t
@@ -152,12 +166,30 @@ void
 hashmap_free (hashmap_t map)
 {
   map_debug ("deallocating hashmap");
-  g_thunks.deallocate_thunk (map->contains);
-  g_thunks.deallocate_thunk (map->get);
-  g_thunks.deallocate_thunk (map->set);
-  g_thunks.deallocate_thunk (map->remove);
-  g_thunks.deallocate_thunk (map->free);
-  /* TODO: free buckets */
+  { /* deallocate thunks */
+    g_thunks.deallocate_thunk (map->contains);
+    g_thunks.deallocate_thunk (map->get);
+    g_thunks.deallocate_thunk (map->set);
+    g_thunks.deallocate_thunk (map->remove);
+    g_thunks.deallocate_thunk (map->free);
+  }
+  { /* deallocate buckets & their entries */
+    map_debug ("deallocating each bucket & their entries");
+    for (size_t i = 0; i < map->__int.capacity; ++i)
+      {
+        hashmap_bucket_t bucket = &map->__int.buckets[i];
+        if (!bucket->nr_entries)
+          continue;
+        hashmap_entry_t entry = bucket->first_entry;
+        while (entry != NULL)
+          {
+            map_debug ("freeing entry with key: '%s'", entry->key);
+            hashmap_entry_t next_entry = entry->next_entry;
+            hashmap_free_entry (entry);
+            entry = next_entry;
+          }
+      }
+  }
   free (map);
 }
 

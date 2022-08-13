@@ -4,6 +4,11 @@
 #include "thunks.h"
 #include <stdbool.h>
 #include <stdint.h>
+
+/* note: when nesting hashmaps, setting `vfree` to true will 
+ * automatically call hashmap_t.free() on the nested hashmap,
+ * thanks to `__builtin_types_compatible_p` :)
+ */
 #define create_hashmap_entry(k, v, kfree, vfree) ({ \
   hashmap_entry_t ret = calloc_ptr_type (typeof (ret)); \
   ret->key = k; \
@@ -14,6 +19,16 @@
   ret->is_hashmap = __builtin_types_compatible_p ( \
     typeof (*v), typeof ( *(hashmap_t)NULL) \
   ); \
+  ret; \
+})
+#define create_empty_hashmap_entry(k) ({ \
+  hashmap_entry_t ret = calloc_ptr_type (typeof (ret)); \
+  ret->key = k; \
+  ret->value = NULL; \
+  ret->hash = hashmap_hash_notrunc (k); \
+  ret->key_freeable = false; \
+  ret->val_freeable = false; \
+  ret->is_hashmap = false; \
   ret; \
 })
 
