@@ -21,7 +21,7 @@
   result->has_error = false;                            \
   result_wrapper_t wrapper = {                          \
     .try_unwrap = g_thunks.allocate_thunk (             \
-      __FILE__ ":" STRINGIZE(__LINE__),                     \
+      "result " __FILE__ ":" STRINGIZE(__LINE__),       \
       try_unwrap, result                                \
     )                                                   \
   };                                                    \
@@ -39,7 +39,7 @@
   result->has_error = true;                             \
   result_wrapper_t wrapper = {                          \
     .try_unwrap = g_thunks.allocate_thunk (             \
-      __FILE__ ":" STRINGIZE(__LINE__),                                                \
+      "error " __FILE__ ":" STRINGIZE(__LINE__),        \
       try_unwrap, result                                \
     )                                                   \
   };                                                    \

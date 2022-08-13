@@ -51,7 +51,9 @@ t_hashmap_get (void)
 {
   hashmap_entry_t entry = create_hashmap_entry ("Key", "Value", false, false);
   __auto_type pair = create_hashmap_with_entry (entry);
-  return pair.map->get (entry->key) == entry->value;
+  assert_equals ("Entry retrieved should be equal to the one defined in scope",
+                 pair.map->get (entry->key), entry->value);
+  return true;
 }
 
 bool
@@ -63,7 +65,9 @@ t_hashmap_set (void)
                   pair.bucket->nr_entries);
   assert_nonnull ("Bucket's first entry should be most recently inserted",
                   pair.bucket->first_entry);
-  return compare_hashmap_entries (pair.bucket->first_entry, entry);
+  assert_true ("Inserted hashmap entry must be the same as one in scope",
+               compare_hashmap_entries (pair.bucket->first_entry, entry));
+  return true;
 }
 
 bool
@@ -99,4 +103,41 @@ t_hashmap_free (void)
   hashmap_t map = g_hashmap.new ();
   map->free ();
   return true; 
+}
+
+bool
+t_hashmap_update (void)
+{
+  hashmap_entry_t entry = create_hashmap_entry ("Key", "Value", false, false);
+  char* new_value = "New Value";
+  __auto_type pair = create_hashmap_with_entry (entry);
+  assert_equals ("Hashmap should contain inserted key",
+                 pair.map->get (entry->key), entry->value);
+  pair.map->set (create_hashmap_entry (entry->key, new_value, false, false));
+  assert_equals ("Hashmap should contain updated key",
+                 pair.map->get (entry->key), new_value);
+  return true;
+}
+
+bool
+t_hashmap_nested (void)
+{
+  hashmap_t outer_map = g_hashmap.new (),
+            inner_map = g_hashmap.new ();
+  hashmap_entry_t entry = create_hashmap_entry ("OKey", inner_map, false, true),
+                  inner_entry = create_hashmap_entry (
+                    "IKey", "Value", false, false);
+  outer_map->set (entry);
+  assert_equals (
+    "Retrieving the inner map must yield the same pointer as in scope",
+    outer_map->get (entry->key), inner_map
+  );
+  inner_map->set (inner_entry);
+  assert_string_equal (
+    "Retrieving the inner map's entry must be the same as was set in scope",
+    ((hashmap_t)outer_map->get (entry->key))->get (inner_entry->key),
+    inner_entry->value
+  );
+  outer_map->free ();
+  return true;
 }

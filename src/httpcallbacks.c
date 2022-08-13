@@ -157,6 +157,7 @@ finalize:
   cb_debug ("finalising HTTP request, deallocating resources");
   context->free ();
   free (method_line);
+  who->connection.op.close ();
 #pragma GCC diagnostic pop  
 }
 
