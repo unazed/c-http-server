@@ -16,6 +16,9 @@
       "istream": "c",
       "tuple": "c",
       "utility": "c",
-      "variant": "c"
+      "variant": "c",
+      "optional": "c",
+      "system_error": "c",
+      "type_traits": "c"
     }
 }

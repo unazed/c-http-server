@@ -22,10 +22,10 @@ list_try_free_entry (list_entry_t entry)
 {
   if (entry->__int.is_freeable)
     {
-      if (entry->__int.is_list)
+      if (entry->__int.is_container)
         {
-          list_debug ("freeing entry marked as list-type");
-          return ((list_t)entry->value)->free ();
+          list_debug ("freeing entry marked as container");
+          return ((struct generic_container_header*)entry->value)->free_fnptr ();
         }
       free (entry);
     }

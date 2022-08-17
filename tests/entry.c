@@ -21,6 +21,7 @@ main (void)
     try (t_hashmap_remove ());
     try (t_hashmap_nested ());
     try (t_hashmap_free ());
+    try (t_hashmap_list_entry ());
   }
   { /* list test cases */
     puts ("Testing list test suite");
@@ -33,6 +34,7 @@ main (void)
     try (t_list_nested ());
     try (t_list_remove ());
     try (t_list_free ());
+    try (t_list_hashmap_entry ());
   }
   puts ("Test suite completed successfully :)");
   return EXIT_SUCCESS;

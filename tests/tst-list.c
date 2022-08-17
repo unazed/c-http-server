@@ -1,5 +1,6 @@
 #include "tests.h"
 #include "../include/list.h"
+#include "../include/hashmap.h"
 
 struct list_return_pair
 {
@@ -37,6 +38,10 @@ t_list_append (void)
   assert_equals (
     "List should properly account number of entries",
     list->__int.nr_entries, 2
+  );
+  assert_false (
+    "List string entry must not be marked as container",
+    entry->__int.is_container
   );
   return true;
 }
@@ -159,8 +164,8 @@ t_list_nested (void)
     nested_string
   );
   assert_true (
-    "Inner list must be marked correctly as of list-type",
-    pair.list->__int.entries[0]->__int.is_list
+    "Inner list must be marked correctly as container",
+    pair.list->__int.entries[0]->__int.is_container
   );
   pair.list->free ();
   return true;
@@ -194,5 +199,25 @@ t_list_create (void)
   assert_nonnull ("List must allocate initial capacity", list->__int.entries);
   assert_nonzero ("List must declare initial capacity", list->__int.capacity);
   assert_equals ("List must be empty on creation", 0, list->__int.nr_entries);
+  return true;
+}
+
+bool
+t_list_hashmap_entry (void)
+{
+  hashmap_entry_t entry = create_hashmap_entry ("key", "value", false, false);
+  hashmap_t map = g_hashmap.new ();
+  map->set (entry);
+  __auto_type pair = create_list_with_entry (create_list_entry (map, true));
+  assert_true (
+    "Hashmap entry must be marked as container",
+    pair.entry->__int.is_container
+  );
+  assert_equals (
+    "Hashmap entry must be identical",
+    pair.entry->value,
+    map
+  );
+  pair.list->free ();
   return true;
 }

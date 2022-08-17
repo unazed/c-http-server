@@ -46,16 +46,17 @@ lstrip_whitespace (raw_httpheader_t header)
   return header;
 }
 
-static httphashlist_t
+static list_t
 parse_http_item_properties (raw_httpheader_t properties, char sep)
 {
+  cb_debug ("trying to parse: %s", properties);
   __builtin_unimplemented ();
 }
 
-static httphashlist_t
+static hashmap_t
 parse_http_list_item (raw_httpheader_t item, char sep, char inv_sep)
 {
-  httphashlist_t ret = g_hashmap.new ();
+  hashmap_t ret = g_hashmap.new ();
   ret->set (create_empty_hashmap_entry ("name"));
   ret->set (create_empty_hashmap_entry ("value"));
   ret->set (create_empty_hashmap_entry ("properties"));
@@ -77,40 +78,38 @@ parse_http_list_item (raw_httpheader_t item, char sep, char inv_sep)
         false, false
       ));
     }
-    
   ret->set (create_hashmap_entry (
     "name", item,
     false, false
   ));
+  cb_debug ("parsed item: %s=%s", ret->get ("name"), ret->get ("value"));
   return ret;
 }
 
-static httphashlist_t
+static list_t
 parse_http_list (raw_httpheader_t header, char sep, char inv_sep)
 {
-  httphashlist_t hash_list = g_hashmap.new ();
+  list_t list = g_list.new ();
   while (true)
     {
       raw_httpheader_t separation = strchrnul (header, sep),
                        stripped_header = lstrip_whitespace (header);
       if (*separation == '\0')
         {
-          hash_list->set (create_hashmap_entry (
-            stripped_header,
+          list->append (create_list_entry (
             parse_http_list_item (stripped_header, sep, inv_sep),
-            false, true
+            true
           ));
           break;
         }
       *separation++ = '\0';
-      hash_list->set (create_hashmap_entry (
-        stripped_header,
+      list->append (create_list_entry (
         parse_http_list_item (stripped_header, sep, inv_sep),
-        false, true
+        true
       ));
       header = separation;
     }
-  return hash_list;
+  return list;
 }
 
 static void
@@ -135,7 +134,7 @@ identify_header_type (httpheader_t strct)
     strct->type = HTTPHEADER_OTHER;
 }
 
-static void
+inline static void
 add_to_free_list (httpcontext_t ctx, void* address)
 {
   /* this is a lazy way to defer finalizing to any layer above where we
@@ -145,23 +144,8 @@ add_to_free_list (httpcontext_t ctx, void* address)
    * memory is allocated.
    */
   cb_debug ("adding %p to free list (size=%zu)", address,
-    ctx->__int_free_list.nr_addresses);
-  if (!ctx->__int_free_list.nr_addresses)
-    {
-      ctx->__int_free_list.addresses
-        = calloc (1, sizeof (*ctx->__int_free_list.addresses));
-      ctx->__int_free_list.nr_addresses++;
-    }
-  else
-    ctx->__int_free_list.addresses = realloc (
-      ctx->__int_free_list.addresses,
-      sizeof (*ctx->__int_free_list.addresses) *
-      ++ctx->__int_free_list.nr_addresses
-    );
-  if (ctx->__int_free_list.addresses == NULL)
-    panic ("failed to allocate space for context freelist");
-  ctx->__int_free_list.addresses[ctx->__int_free_list.nr_addresses - 1]
-    = address;
+    ctx->__int.free_list->__int.nr_entries);
+  ctx->__int.free_list->append (create_list_entry (address, true));
 }
 
 static result_type_of (httpheader_t)
@@ -236,7 +220,7 @@ case HTTPHEADER_ACCEPT:
 case HTTPHEADER_KEEPALIVE:
   {
     cb_debug ("allocating keep-alive http list");
-    httphashlist_t list = parse_http_list (header->value_as.raw, ',', '\0');
+    list_t list = parse_http_list (header->value_as.raw, ',', '\0');
     list->free ();
     break;
   }
@@ -249,8 +233,14 @@ case HTTPHEADER_ACCEPT_ENCODING:
   }
   default:
   {
-    cb_debug ("parsing unknown header, name: '%s', val: '%s'",
-        header->name, header->value_as.raw); 
+    cb_debug (
+      "adding unidentified header, name: '%s', val: '%s'",
+      header->name, header->value_as.raw
+    ); 
+    cb_debug ("address of name: %p", header->name);
+    context->connection.aux_headers->set (
+      create_hashmap_entry (header->name, header->value_as.raw, false, false)
+    );
     break;
   }
 }
@@ -260,7 +250,7 @@ case HTTPHEADER_ACCEPT_ENCODING:
 static httpcontext_t
 create_context (void)
 {
-  httpcontext_t ctx = calloc (1, sizeof (*ctx));
+  httpcontext_t ctx = calloc_ptr_type (typeof (ctx));
   if (ctx == NULL)
     panic ("failed to allocate space for HTTP context");
   ctx->update_from_header = g_thunks.allocate_thunk (
@@ -271,25 +261,31 @@ create_context (void)
     "free_context",
     free_context, ctx
   );
+  ctx->__int.free_list = g_list.new ();
+  ctx->connection.aux_headers = g_hashmap.new ();
   return ctx;
 }
 
 static void
 free_context (httpcontext_t ctx)
 {
-  cb_debug ("deallocating context thunks");
-  g_thunks.deallocate_thunk (ctx->update_from_header);
-  g_thunks.deallocate_thunk (ctx->free);
-  for (size_t i = 0; i < ctx->__int_free_list.nr_addresses; ++i)
-    {
-      cb_debug ("deallocating context free list item %zu", i);
-      free (ctx->__int_free_list.addresses[i]);
-    }
-#define try_free(map) if ((map) != NULL) map->free ()
-  try_free (ctx->cookies);
-  try_free (ctx->connection.accept);
-  try_free (ctx->connection.encoding.allowed_encodings);
-  free (ctx);
+  { /* deallocate thunks */
+    cb_debug ("deallocating context thunks");
+    g_thunks.deallocate_thunk (ctx->update_from_header);
+    g_thunks.deallocate_thunk (ctx->free);
+  }
+  { /* deallocate free list */
+    cb_debug ("deallocating free list and freeable addresses");
+    ctx->__int.free_list->free ();
+  }
+  { /* free header-specific context hashmaps/lists */
+#define try_free(cont) if ((cont) != NULL) cont->free ()
+    try_free (ctx->cookies);
+    try_free (ctx->connection.accept);
+    try_free (ctx->connection.encoding.allowed_encodings);
+    try_free (ctx->connection.aux_headers);
+    free (ctx);
+  }
 }
 
 struct __g_http_methods g_http_methods = {
