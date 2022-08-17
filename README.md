@@ -81,7 +81,23 @@ The architecture of the HTTP/TCP stack is quite canonical. It uses an `epoll` ed
 
 In consideration of literature regarding the differences between asynchronous/multithreaded architectures, it is more developer-friendly and contributes less technical debt to implement an asynchronous (event-based) system at the socket layer. In addition to this, when implemented optimally, the performance should be very similar.
 
+<h3>Container types<h3>
+<h4>Hashmap</h4>
+
+The `hashmap_t` (impl. `src/hashmap.c`) is a relatively naive hashmap implementation with collision-resolution via chaining.
+Its hashing algorithm uses `djb2` for uniform hash distribution, but otherwise it is a naive hashmap, without much concern for throughput latency, cache compliance or type safety for that matter.
+
+<h4>List</h4>
+
+The `list_t` (impl. `src/list.c`), like the hashmap, is relatively naive and simplistic. It resembles a vector-like memory storage pattern, meaning each data pointer is stored contiguously in memory, opposed to being linked.
+The interface supports CRUD + insertion, and has no fragmentation as it coalesces any gaps on any removals.
+
 <h3>Self-criticism</h3>
 
-- Naming conventions: As much as I enjoy the driver-esque double-underscore-everywhere naming convention, it misrepresents linkage scoping rules
+- Naming conventions: As much as I enjoy the driver-esque double-underscore-everywhere naming convention, it misrepresents linkage scoping rules.
 - Global thunk table: This should've been a more comprehensive data structure; at the moment the thunk table can only monotonely grow, despite deallocations, which themselves just leave gaps in the structure that are accounted for in future allocations. A simple binary tree would've accounted for grouping & inheritance, which are relevant factors when thunks are nested.
+- Naive container types: `list_t`/`hashmap_t` types are both very simple in implementation, which is may be moot considering HTTP latency vastly consumes code performance, but nonetheless considering that their use-case is known, it may have been preferable to tailor these data structures towards assisting HTTP context management. One example is preferring a precomputed hashtable to store header values, in order to fully avoid collisions, since headers can be known ahead of time; but the trade-off is avoiding collisions, which are unlikely in the scope of HTTP header names anyways.
+- Overarching complexity: Throughout the span of development, I've felt it is necessary to reinvent the wheel (bar the `djb2` hashing algorithm, and glibc/GCC) at every corner, purely out of pedagogical purposes, i.e., to self-teach through practical implementation; but in turn it has increased the complexity of factors that I must take into consideration while debugging. In short, I may have made a grave mistake somewhere in the implementation of a container type, which I may only discover while neck-deep in HTTP response generation code. Essentially, it has spread the technical debt quite thin, and I fear it might cause issues down the road.
+- The `Makefile`: Honestly, I hate using & writing make-files, it seems like an unnecessary complexity that I could reduce into a Python script which would be far more extensible and easy to manage. For that reason, when you run `make` it will automatically execute the program with predefined parameters on a successful compilation--which is a terrible thing that I have never seen any other compilation process do, but it makes my life easier.
+- Type generics: As little as I know--or care for that matter--about C++, I envy the type generics & type safety that it provides; so, through-out the source code there will be a lot of type nesting & dependence on return types, signatures, type matching, etc., solely through the virtue of GCC extensions. Nonetheless, it is very compiler-specific and likely also very platform-specific, but I have tried my best to make it readable and sane. I have tried experimenting with incorporating type-safety in container types, but it is very complicated, and unlikely to see the light of day as the current prototypes stand.
+
