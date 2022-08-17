@@ -2,6 +2,7 @@
 #define __HASHMAP_H
 
 #include "thunks.h"
+#include "common.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -16,9 +17,7 @@
   ret->hash = hashmap_hash_notrunc (k); \
   ret->key_freeable = kfree; \
   ret->val_freeable = vfree; \
-  ret->is_hashmap = __builtin_types_compatible_p ( \
-    typeof (*v), typeof ( *(hashmap_t)NULL) \
-  ); \
+  ret->is_container = is_container_type (v); \
   ret; \
 })
 #define create_empty_hashmap_entry(k) ({ \
@@ -28,9 +27,26 @@
   ret->hash = hashmap_hash_notrunc (k); \
   ret->key_freeable = false; \
   ret->val_freeable = false; \
-  ret->is_hashmap = false; \
+  ret->is_container = false; \
   ret; \
 })
+#define __int_hashmap_for_each_bucket(map) \
+  for ( \
+    struct {size_t i; hashmap_bucket_t bucket;} \
+      pair = {0, map->__int.buckets}; \
+    pair.i < map->__int.capacity; \
+    pair.bucket = &map->__int.buckets[++pair.i] \
+  )
+#define hashmap_for_each_entry(map, as) \
+  hashmap_entry_t as; \
+  __int_hashmap_for_each_bucket(map) \
+    for ( \
+      struct {size_t j; hashmap_entry_t entry;} \
+        entry_pair = {0, pair.bucket->first_entry}; \
+      (entry_pair.j++ < pair.bucket->nr_entries) \
+      && (as = entry_pair.entry); \
+      entry_pair.entry = entry_pair.entry->next_entry \
+    )
 
 typedef char* hashmap_key_t;
 typedef void* hashmap_value_t;
@@ -38,13 +54,16 @@ typedef uintmax_t hash_t;
 
 typedef struct hashmap_entry
 {
-  bool key_freeable;
-  hashmap_key_t key;
-  bool val_freeable;
-  hashmap_value_t value;
-  struct /* internally managed state */
-  {
-    bool is_hashmap;
+  struct
+  { /* user-provided state */
+    bool key_freeable;
+    hashmap_key_t key;
+    bool val_freeable;
+    hashmap_value_t value;
+  };
+  struct
+  { /* internally managed state */
+    bool is_container;
     struct hashmap_entry* next_entry;
     hash_t hash;
   };
@@ -62,8 +81,9 @@ __THUNK_DECL void hashmap_remove_thunk (hashmap_key_t key);
 __THUNK_DECL bool hashmap_contains_thunk (hashmap_key_t key);
 __THUNK_DECL void hashmap_free_thunk (void);
 
-typedef struct
+typedef struct cnt_hashmap
 {
+  typeof (hashmap_free_thunk)* free;
   struct
   {
     struct hashmap_bucket* buckets;
@@ -73,7 +93,6 @@ typedef struct
   typeof (hashmap_set_thunk)* set;
   typeof (hashmap_remove_thunk)* remove;
   typeof (hashmap_contains_thunk)* contains;
-  typeof (hashmap_free_thunk)* free;
 } *hashmap_t;
 
 hash_t hashmap_hash_notrunc (hashmap_key_t key);

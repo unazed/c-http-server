@@ -1,0 +1,388 @@
+make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+# GNU Make 4.3
+ 
+# Built for x86_64-pc-linux-gnu
+ 
+# Copyright (C) 1988-2020 Free Software Foundation, Inc.
+ 
+# License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+ 
+# This is free software: you are free to change and redistribute it.
+ 
+# There is NO WARRANTY, to the extent permitted by law.
+ 
+
+ 
+# Make data base, printed on Tue Aug 16 18:31:19 2022
+ 
+
+# Variables
+ 
+
+ 
+# environment
+ 
+GDK_BACKEND = x11
+ 
+# environment
+ 
+LC_ALL = C
+ 
+# environment
+ 
+NO_AT_BRIDGE = 1
+ 
+# makefile (from 'Makefile', line 9)
+ 
+TESTDIR = tests
+ 
+# environment
+ 
+I3SOCK = /tmp/i3-unazed.eROEai/ipc-socket.556
+ 
+# environment
+ 
+SUDO_UID = 1000
+ 
+# environment
+ 
+VSCODE_CWD = /home/unazed
+ 
+# environment
+ 
+WINDOWID = 27262986
+ 
+# environment
+ 
+NVM_DIR = /home/unazed/.nvm
+ 
+# default
+ 
+MAKE_COMMAND := make
+ 
+# automatic
+ 
+@D = $(patsubst %/,%,$(dir $@))
+ 
+# environment
+ 
+VSCODE_HANDLES_UNCAUGHT_ERRORS = true
+ 
+# default
+ 
+.VARIABLES := 
+ 
+# environment
+ 
+PWD = /home/programming/c/simple-http-server
+ 
+# automatic
+ 
+%D = $(patsubst %/,%,$(dir $%))
+ 
+# environment
+ 
+LSCOLORS = Gxfxcxdxbxegedabagacad
+ 
+# environment
+ 
+MAIL = /var/spool/mail/unazed
+ 
+# environment
+ 
+OLDPWD = /home/unazed
+ 
+# automatic
+ 
+^D = $(patsubst %/,%,$(dir $^))
+ 
+# automatic
+ 
+%F = $(notdir $%)
+ 
+# environment
+ 
+VSCODE_CODE_CACHE_PATH = /home/unazed/.config/Code - Insiders/CachedData/173f4bea73601a31859372b409cac2c20fa91194
+ 
+# environment
+ 
+LANG = C
+ 
+# environment
+ 
+XAUTHORITY = /home/unazed/.Xauthority
+ 
+# default
+ 
+.LOADED := 
+ 
+# default
+ 
+.INCLUDE_DIRS = /usr/include /usr/local/include /usr/include
+ 
+# environment
+ 
+COLORFGBG = 7;default;0
+ 
+# makefile
+ 
+MAKEFLAGS = pqrR
+ 
+# makefile
+ 
+CURDIR := /home/programming/c/simple-http-server
+ 
+# environment
+ 
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
+ 
+# automatic
+ 
+*D = $(patsubst %/,%,$(dir $*))
+ 
+# environment
+ 
+MFLAGS = -pqrR
+ 
+# default
+ 
+.SHELLFLAGS := -c
+ 
+# automatic
++D = $(patsubst %/,%,$(dir $+))
+# makefile (from 'Makefile', line 1)
+MAKEFILE_LIST := Makefile
+# automatic
+@F = $(notdir $@)
+# environment
+ZSH = /home/unazed/.oh-my-zsh
+# environment
+VSCODE_PID = 262810
+# makefile (from 'Makefile', line 11)
+BUILDFILE = main
+# automatic
+?D = $(patsubst %/,%,$(dir $?))
+# makefile (from 'Makefile', line 4)
+CCXFLAGS := -Os -Wall -Wno-maybe-uninitialized -Wno-unused-function -Wno-unused-variable -Wno-format-extra-args -Wno-incompatible-pointer-types
+# makefile (from 'Makefile', line 1)
+CCFLAGS := -g -Wall -Wno-maybe-uninitialized -Wno-unused-function -Wno-unused-variable -Wno-format-extra-args -Wno-incompatible-pointer-types
+# automatic
+*F = $(notdir $*)
+# environment
+CHROME_DESKTOP = code-insiders-url-handler.desktop
+# environment
+DBUS_SESSION_BUS_ADDRESS = disabled:
+# automatic
+<D = $(patsubst %/,%,$(dir $<))
+# environment
+VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
+# default
+MAKE_HOST := x86_64-pc-linux-gnu
+# makefile
+SHELL = /bin/sh
+# default
+MAKECMDGOALS := all
+# environment
+SHLVL = 2
+# environment
+MAKELEVEL := 0
+# default
+MAKE = $(MAKE_COMMAND)
+# environment
+PATH = /usr/local/sbin:/usr/local/bin:/usr/bin:/usr/lib/jvm/default/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl:/usr/lib/jvm/default/bin
+# default
+MAKEFILES := 
+# environment
+MOTD_SHOWN = pam
+# automatic
+^F = $(notdir $^)
+# environment
+VIRTUAL_ENV_DISABLE_PROMPT = 1
+# environment
+SUDO_GID = 1000
+# environment
+SUDO_COMMAND = /usr/bin/lxdm
+# automatic
+?F = $(notdir $?)
+# environment
+LS_COLORS = no=00:fi=00:di=01;34:ln=00;36:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=41;33;01:ex=00;32:*.cmd=00;32:*.exe=01;32:*.com=01;32:*.bat=01;32:*.btm=01;32:*.dll=01;32:*.tar=00;31:*.tbz=00;31:*.tgz=00;31:*.rpm=00;31:*.deb=00;31:*.arj=00;31:*.taz=00;31:*.lzh=00;31:*.lzma=00;31:*.zip=00;31:*.zoo=00;31:*.z=00;31:*.Z=00;31:*.gz=00;31:*.bz2=00;31:*.tb2=00;31:*.tz2=00;31:*.tbz2=00;31:*.avi=01;35:*.bmp=01;35:*.fli=01;35:*.gif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mng=01;35:*.mov=01;35:*.mpg=01;35:*.pcx=01;35:*.pbm=01;35:*.pgm=01;35:*.png=01;35:*.ppm=01;35:*.tga=01;35:*.tif=01;35:*.xbm=01;35:*.xpm=01;35:*.dl=01;35:*.gl=01;35:*.wmv=01;35:*.aiff=00;32:*.au=00;32:*.mid=00;32:*.mp3=00;32:*.ogg=00;32:*.voc=00;32:*.wav=00;32:*.patch=00;34:*.o=00;32:*.so=01;35:*.ko=01;31:*.la=00;33
+# automatic
++F = $(notdir $+)
+# environment
+LESS = -R
+# environment
+DESKTOP_SESSION = /usr/bin/i3
+# environment
+ORIGINAL_XDG_CURRENT_DESKTOP = undefined
+# 'override' directive
+GNUMAKEFLAGS := 
+# environment
+LOGNAME = unazed
+# makefile
+.DEFAULT_GOAL := _PHONY
+# environment
+DISPLAY = :0
+# environment
+GTK_MODULES = canberra-gtk-module
+# environment
+USER = unazed
+# default
+MAKE_VERSION := 4.3
+# environment
+DEBUGINFOD_URLS = https://debuginfod.archlinux.org 
+# environment
+PAGER = less
+# environment
+_ = /usr/bin/make
+# environment
+MOZ_PLUGIN_PATH = /usr/lib/mozilla/plugins
+# environment
+COLORTERM = rxvt-xpm
+# environment
+SUDO_USER = unazed
+# makefile (from 'Makefile', line 12)
+TESTFILE = run_tests
+# environment
+VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
+# environment
+HOME = /home/unazed
+# makefile (from 'Makefile', line 7)
+INCDIR = include
+# environment
+ELECTRON_RUN_AS_NODE = 1
+# environment
+VSCODE_IPC_HOOK = /home/unazed/.config/Code - Insiders/1.69.0-insider-main.sock
+# environment
+TERM = rxvt-unicode-256color
+# makefile (from 'Makefile', line 8)
+SRCDIR = src
+# default
+.RECIPEPREFIX := 
+# automatic
+<F = $(notdir $<)
+# default
+SUFFIXES := 
+# environment
+VSCODE_CLI = 1
+# environment
+ELECTRON_NO_ATTACH_CONSOLE = 1
+# default
+.FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell nocomment grouped-target extra-prereqs archives jobserver output-sync check-symlink guile load
+# makefile (from 'Makefile', line 13)
+CC = gcc
+# makefile (from 'Makefile', line 10)
+BUILDDIR = build
+# variable set hash-table stats:
+# Load=94/1024=9%, Rehash=0, Collisions=9/136=7%
+
+# Pattern-specific Variable Values
+
+# No pattern-specific variable values.
+
+# Directories
+
+# . (device 2050, inode 2493760): 12 files, no impossibilities.
+
+# 12 files, no impossibilities in 1 directories.
+
+# Implicit Rules
+
+# No implicit rules.
+
+# Files
+
+_PHONY: all release test
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+Makefile:
+#  Implicit rule search has been done.
+#  Last modified 2022-08-14 22:10:47.896258378
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+.DEFAULT:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+all:
+#  Command line target.
+#  Implicit rule search has not been done.
+#  Implicit/static pattern stem: ''
+#  File does not exist.
+#  File has been updated.
+#  Needs to be updated (-q is set).
+# automatic
+# @ := all
+# automatic
+# * := 
+# automatic
+# < := 
+# automatic
+# + := 
+# automatic
+# % := 
+# automatic
+# ^ := 
+# automatic
+# ? := 
+# automatic
+# | := 
+# variable set hash-table stats:
+# Load=8/32=25%, Rehash=0, Collisions=4/22=18%
+#  recipe to execute (from 'Makefile', line 28):
+	$(CC) $(CCFLAGS) -o ${BUILDDIR}/${BUILDFILE} ${SRCDIR}/*.c 
+	@if [ -z $? ]; then \
+		make release > /dev/null 2>&1; \
+		make test; \
+		./${BUILDDIR}/${TESTFILE}; \
+		if [ -z $? ]; then \
+			./${BUILDDIR}/${BUILDFILE} ./routes "127.0.0.1" "8080"; \
+		fi; \
+	fi
+
+test:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 18):
+	${CC} -g -o ${BUILDDIR}/${TESTFILE} ${TESTDIR}/*.c \
+					 ${SRCDIR}/hashmap.c ${SRCDIR}/thunks.c ${SRCDIR}/list.c
+
+release:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 22):
+	${CC} ${CCXFLAGS} -o ${BUILDDIR}/${BUILDFILE}-release ${SRCDIR}/*.c
+	@if [ -z $? ]; then \
+		strip "./${BUILDDIR}/${BUILDFILE}-release"; \
+	fi
+
+# Not a target:
+.SUFFIXES:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# files hash-table stats:
+# Load=7/1024=1%, Rehash=0, Collisions=0/24=0%
+# VPATH Search Paths
+
+# No 'vpath' search paths.
+
+# No general ('VPATH' variable) search path.
+
+# strcache buffers: 1 (0) / strings = 20 / storage = 157 B / avg = 7 B
+# current buf: size = 8162 B / used = 157 B / count = 20 / avg = 7 B
+
+# strcache performance: lookups = 33 / hit rate = 39%
+# hash-table stats:
+# Load=20/8192=0%, Rehash=0, Collisions=0/33=0%
+# Finished Make data base on Tue Aug 16 18:31:19 2022
+
+ 

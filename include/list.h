@@ -10,9 +10,7 @@
   ret->__int.value_hash = list_hash_item ( \
     ret->value, (sizeof (v) > 1)? sizeof (v) - 1: sizeof (v) \
   ); \
-  ret->__int.is_list = __builtin_types_compatible_p ( \
-    typeof (*v), typeof ( *(list_t)NULL) \
-  ); \
+  ret->__int.is_container = is_container_type (v); \
   ret; \
 })
 #define list_hash_of(v) \
@@ -26,7 +24,7 @@ typedef struct
   list_val_t value;
   struct
   {
-    bool is_list;
+    bool is_container;
     bool is_freeable;
     list_val_hash_t value_hash;
   } __int;
@@ -40,8 +38,9 @@ __THUNK_DECL list_val_t list_get_thunk (size_t index);
 __THUNK_DECL bool list_contains_thunk (list_val_hash_t hash);
 __THUNK_DECL void list_free_thunk (void);
 
-typedef struct
+typedef struct cnt_list
 {
+  typeof (list_free_thunk)* free;
   struct
   {
     list_entry_t* entries;
@@ -53,7 +52,6 @@ typedef struct
   typeof (list_get_thunk)* get;
   typeof (list_set_thunk)* set;
   typeof (list_contains_thunk)* contains;
-  typeof (list_free_thunk)* free;
 } *list_t;
 
 void list_append (list_t list, list_entry_t entry);

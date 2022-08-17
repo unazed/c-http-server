@@ -1,0 +1,19 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/programming/c/simple-http-server'
+gcc -g -Wall -Wno-maybe-uninitialized -Wno-unused-function -Wno-unused-variable -Wno-format-extra-args -Wno-incompatible-pointer-types -o build/main src/*.c 
+if [ -z  ]; then \
+	make release > /dev/null 2>&1; \
+	make test; \
+	./build/run_tests; \
+	if [ -z  ]; then \
+		./build/main ./routes "127.0.0.1" "8080"; \
+	fi; \
+fi
+gcc -Os -Wall -Wno-maybe-uninitialized -Wno-unused-function -Wno-unused-variable -Wno-format-extra-args -Wno-incompatible-pointer-types -o build/main-release src/*.c
+if [ -z  ]; then \
+	strip "./build/main-release"; \
+fi
+gcc -g -o build/run_tests tests/*.c \
+				 src/hashmap.c src/thunks.c src/list.c
+make: Leaving directory '/home/programming/c/simple-http-server'
+ 

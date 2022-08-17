@@ -5,19 +5,33 @@
 #include <string.h>
 
 #define assert_equals(why, expected, actual) \
-  if (expected != actual) { \
-      fprintf (stderr, "%s:%d: Assertion failed: %s == %s\n", \
-                __FILE__, __LINE__, #expected, #actual); \
-      fprintf (stderr, "-- reason: %s\n", why); \
-      return false; \
-  }
+  if (expected != actual) \
+    { \
+        fprintf ( \
+          stderr, \
+          "%s:%d: \x1b[31;1mAssertion failed: %s == %s\x1b[0m\n", \
+          __FILE__, __LINE__, #expected, #actual \
+        ); \
+        fprintf (stderr, "\x1b[37m\x1b[41;1mReason: %s\x1b[0m\n", why); \
+        return false; \
+    } \
+  else \
+    printf ("%s:%d: \x1b[32;1mAssertion succeeded: %s\x1b[0m\n", \
+            __FILE__, __LINE__, why);
 #define assert_not_equals(why, expected, actual) \
-  if (expected == actual) { \
-      fprintf (stderr, "%s:%d: Assertion failed: %s  != %s\n", \
-                __FILE__, __LINE__, #expected, #actual); \
-      fprintf (stderr, "-- reason: %s\n", why); \
-      return false; \
-  }
+  if (expected == actual) \
+    { \
+        fprintf ( \
+          stderr, \
+          "%s:%d: \x1b[31;1mAssertion failed: %s != %s\x1b[0m\n", \
+          __FILE__, __LINE__, #expected, #actual \
+        ); \
+        fprintf (stderr, "\x1b[37m\x1b[41;1mReason: %s\x1b[0m\n", why); \
+        return false; \
+    } \
+  else \
+    printf ("%s:%d: \x1b[32;1mAssertion succeeded: %s\x1b[0m\n", \
+            __FILE__, __LINE__, why);
 #define CONCAT(a, b) a ## b
 #define not_implemented() \
   fprintf (stderr, "%s:%d: Assertion failed: %s() is not implemented\n", \
@@ -33,10 +47,10 @@ typedef bool testcase_fn(void);
 
 testcase_fn t_hashmap_create, t_hashmap_get, t_hashmap_set, t_hashmap_remove,
             t_hashmap_contains, t_hashmap_free, t_hashmap_nested,
-            t_hashmap_update;
+            t_hashmap_update, t_hashmap_list_entry;
 
 testcase_fn t_list_create, t_list_append, t_list_remove, t_list_insert,
             t_list_get, t_list_free, t_list_nested, t_list_set,
-            t_list_contains;
+            t_list_contains, t_list_hashmap_entry;
 
 #endif /* __TESTS_H */

@@ -86,7 +86,10 @@ hashmap_set (hashmap_t map, hashmap_entry_t entry)
   hashmap_bucket_t bucket = hashmap_get_bucket_by_key (map, entry->key);
   *hashmap_to_last_entry (bucket) = entry;
   ++bucket->nr_entries;
-  map_debug ("assigned hash with key: '%s'", entry->key);
+  map_debug (
+    "assigned hash with key: '%s' into bucket #%zu (entry: %p)",
+    entry->key, entry->hash % map->__int.capacity, entry
+  );
   return entry->key;
 }
 
@@ -102,10 +105,10 @@ hashmap_free_entry (hashmap_entry_t entry)
     }
   if (entry->val_freeable)
     {
-      if (entry->is_hashmap)
+      if (entry->is_container)
         {
-          map_debug ("freeing hashmap entry marked freeable");
-          return ((hashmap_t)entry->value)->free ();
+          map_debug ("freeing hashmap entry marked container");
+          return ((struct generic_container_header*)entry->value)->free_fnptr ();
         }
       map_debug ("freeing value marked freeable");
       free (entry->value);

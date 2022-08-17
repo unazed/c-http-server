@@ -6,14 +6,12 @@
 #include <stdbool.h>
 #include "restype.h"
 #include "hashmap.h"
+#include "list.h"
 #define CRLF ("\r\n")
 
 typedef char* raw_httpheader_t;
 typedef time_t httptimeval_t;
 typedef bool httpbool_t;
-
-typedef hashmap_t httpcookiejar_t;
-typedef hashmap_t httphashlist_t;
 
 enum httpheader_value_type
 {
@@ -48,9 +46,9 @@ typedef struct
   raw_httpheader_t name;
   union
   {
-    httpcookiejar_t cookiejar;
+    hashmap_t cookiejar;
     raw_httpheader_t raw;
-    httphashlist_t hash_list;
+    list_t list;
   } value_as;
 } *httpheader_t;
 
@@ -63,12 +61,12 @@ free_context_thunk (void);
 typedef const char* (*generic_compression_fn)(const char* plaintext);
 typedef const char* (*generic_decompression_fn)(const char* compressed);
 
-struct encoding_type
+typedef struct
 {
   generic_compression_fn compress;
   generic_decompression_fn decompress;
   void* reserved;
-};
+} *httpencoding_t;
 
 typedef struct
 {
@@ -76,25 +74,25 @@ typedef struct
   {
     struct 
     {
-      httphashlist_t allowed_encodings;
-      struct encoding_type* chosen_encoding;
+      list_t allowed_encodings;
+      httpencoding_t chosen_encoding;
     } encoding;
     struct 
     {
       bool enabled;
       httptimeval_t timeout;
-      size_t max_reqs;  /* not enforced */
+      size_t max_reqs;
     } keep_alive;
-    httphashlist_t accept;
+    list_t accept;
     raw_httpheader_t user_agent;
     raw_httpheader_t host;
+    hashmap_t aux_headers;
   } connection;
   struct
   {
-    void ** addresses;
-    size_t nr_addresses;
-  } __int_free_list;
-  httpcookiejar_t cookies;
+    list_t free_list;
+  } __int;
+  hashmap_t cookies;
   typeof (free_context_thunk)* free;
   typeof (update_from_header_thunk)* update_from_header;
 } *httpcontext_t;

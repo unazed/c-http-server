@@ -152,12 +152,15 @@ __int_cb_client_readable (httpserver_t this, tcp_client_t who)
       if (who->connection.closed)
         goto finalize;
     }
-  /* TODO: serve request */
+  hashmap_for_each_entry (context->connection.aux_headers, entry)
+    {
+      cb_debug ("'%s': '%s'", entry->key, entry->value);
+    }
+  who->connection.op.close ();
 finalize:
   cb_debug ("finalising HTTP request, deallocating resources");
   context->free ();
   free (method_line);
-  who->connection.op.close ();
 #pragma GCC diagnostic pop  
 }
 

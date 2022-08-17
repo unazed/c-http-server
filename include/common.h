@@ -38,7 +38,7 @@
   do { } while (0)
 #endif /* MAP_DEBUG */
 
-#if 1
+#if 0
 #define list_debug(msg, ...)                                                \
   printf ("\x1B[36m(list:%s:%d)\033[0m " msg "\n", __FILE__, __LINE__,\
           ##__VA_ARGS__)
@@ -91,7 +91,7 @@
     );                                                                \
     exit (EXIT_FAILURE);                                              \
     __builtin_unreachable ();                                         \
-  })  /* the __builtin_unreachable() is redundant, but better safe than sorry */
+  }) /* the __builtin_unreachable() is redundant, but better safe than sorry */
 
 #pragma GCC diagnostic pop
 
@@ -106,5 +106,14 @@
 #define __builtin_unimplemented() \
   panic ("%s() is unimplemented", __func__); \
   __builtin_unreachable ()
+
+#define is_container_type(v) \
+  (__builtin_types_compatible_p (typeof (v), struct cnt_hashmap *) || \
+  __builtin_types_compatible_p (typeof (v), struct cnt_list *))
+
+struct generic_container_header
+{
+  void (*free_fnptr)(void);
+};
 
 #endif /* __COMMON_H */
